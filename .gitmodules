@@ -1,0 +1,6 @@
+[submodule "QtDropbox2"]
+	path = QtDropbox2
+	url = https://github.com/CMGeorge/QtDropbox2.git
+[submodule "QMLOAuth"]
+	path = QMLOAuth
+	url = https://github.com/CMGeorge/QMLOAuth.git
