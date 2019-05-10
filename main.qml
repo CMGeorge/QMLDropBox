@@ -1,6 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Window 2.12
 import QtQuick.Controls 2.12
+import QtQuick.Controls.Material 2.3
 import QtQuick.Layouts 1.12
 
 import Qt.labs.settings 1.1
@@ -30,7 +31,7 @@ Window {
         id: fileDownloader
         api: dropBoxIntance
         onSignal_downloadProgress:{
-//            console.debug("Progess "+bytesReceived+" from "+bytesTotal)
+            //            console.debug("Progess "+bytesReceived+" from "+bytesTotal)
         }
         onSignal_errorOccurred:{
             console.debug("Error: "+errorcode+" with message "+errormessage)
@@ -38,15 +39,15 @@ Window {
         onSignal_operationAborted:{
             console.debug("Operation Aborted");
         }
-//        onSignal_downloadFinished:{
-//            console.debug("Download Finished ")//<<fileDownloader.temporaryLink());
-//        }
+        //        onSignal_downloadFinished:{
+        //            console.debug("Download Finished ")//<<fileDownloader.temporaryLink());
+        //        }
 
-//        function downloadFile(filename){
-//            fileDownloader.filename = filename
-//            fileDownloader.downloadFile();
-////            console.debug("Open File Status: "<<fileDownloader.openReadOnly());
-//        }
+        //        function downloadFile(filename){
+        //            fileDownloader.filename = filename
+        //            fileDownloader.downloadFile();
+        ////            console.debug("Open File Status: "<<fileDownloader.openReadOnly());
+        //        }
     }
 
     visible: true
@@ -69,7 +70,7 @@ Window {
                                            console.debug("DROPBOX")
                                            console.debug("Success "+JSON.stringify(urlElements))
                                            var _accessToken = urlElements.access_token
-                                            dropBoxSettings.accessToken = _accessToken;
+                                           dropBoxSettings.accessToken = _accessToken;
                                            dropBoxIntance.setAccessToken(_accessToken);
                                            dropBoxFolder.foldername = ""
                                            dropBoxFolder.contents(listModel);
@@ -117,18 +118,90 @@ Window {
             model: FoldersModel{
                 id: listModel
             }
-            delegate: ItemDelegate{
+            delegate: SwipeDelegate{
+                id: itemDelegate
+                property bool editMode: false
+                contentItem.visible: !editMode
+                contentItem.clip: true
+//                clip: true
                 width: parent.width
                 text: name
+                TextField{
+                    id: txtNewName
+                    text: name
+                    visible: itemDelegate.editMode && swipe.position == 0
+                    clip: true
+                    anchors{
+                        verticalCenter: parent.verticalCenter
+                        left: parent.left
+                        leftMargin: parent.padding
+                        right: parent.right
+                        rightMargin: 10
+
+                    }
+                    onAccepted: {
+                        fileDownloader.filename = path
+                        itemDelegate.enabled = false
+                        var _localPath = pathList.length>0?pathList[pathList.length-1]:"";
+                        console.debug("Renamed: "+fileDownloader.move(_localPath+"/"+txtNewName.text))
+                        itemDelegate.editMode = false
+                        itemDelegate.enabled = true
+                    }
+                }
+
+                swipe.right: RowLayout{
+                    anchors.right: parent.right
+                    spacing: 0
+                    height: parent.height
+                    Label {
+                        id: deleteLabel
+                        Layout.fillHeight: true
+                        text: qsTr("Delete")
+                        color: "white"
+                        verticalAlignment: Label.AlignVCenter
+                        padding: 12
+                        height: parent.height
+//                        anchors.right: parent.right
+
+                        SwipeDelegate.onClicked: listView.model.remove(index)
+
+                        background: Rectangle {
+                            color: deleteLabel.SwipeDelegate.pressed ? Qt.darker("tomato", 1.1) : "tomato"
+                        }
+                    }
+                    Label {
+                        id: deleteRename
+                        Layout.fillHeight: true
+                        text: qsTr("Rename")
+                        color: "white"
+                        verticalAlignment: Label.AlignVCenter
+                        padding: 12
+                        height: parent.height
+//                        anchors.right: parent.right
+
+                        SwipeDelegate.onClicked: {
+                            swipe.close()
+                            editMode = true
+//                            itemDelegate.contentItem.visible = false
+//                            listView.model.remove(index)
+                        }
+                        background: Rectangle {
+                            color: deleteRename.SwipeDelegate.pressed ? Qt.darker("orange", 1.1) : "orange"
+                        }
+                    }
+
+                }
+
                 //                Component.onCompleted: console.debug(model.filename());
                 onClicked: {
+                    if (editMode) return;
                     if (model.isDirectory){
-//                        setLoading(true)
+                        //                        setLoading(true)
                         pathList.push(path);
                         lblPath.text  = pathList[pathList.length-1];
                         dropBoxFolder.foldername = path
                         dropBoxFolder.contents(listModel)
-//                        setLoading(false)
+                        //                        setLoading(false)
                     }else{
 
                         var _sprite = Qt.createQmlObject("import QtQuick 2.12;
