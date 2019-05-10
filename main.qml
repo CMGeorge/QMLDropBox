@@ -12,7 +12,13 @@ import QtDropBox2 1.0
 Window {
     id: appWindow
     property alias dropBoxIntance: dropBoxIntance
+    property alias busyIndicator:busyIndicator
     property variant pathList: [];
+
+    function setLoading(statusLoading){
+        busyIndicator.running = statusLoading
+    }
+
     QDropbox2{
         id: dropBoxIntance
     }
@@ -24,7 +30,7 @@ Window {
         id: fileDownloader
         api: dropBoxIntance
         onSignal_downloadProgress:{
-            console.debug("Progess "+bytesReceived+" from "+bytesTotal)
+//            console.debug("Progess "+bytesReceived+" from "+bytesTotal)
         }
         onSignal_errorOccurred:{
             console.debug("Error: "+errorcode+" with message "+errormessage)
@@ -32,9 +38,9 @@ Window {
         onSignal_operationAborted:{
             console.debug("Operation Aborted");
         }
-        onSignal_downloadFinished:{
-            console.debug("Download Finished ")//<<fileDownloader.temporaryLink());
-        }
+//        onSignal_downloadFinished:{
+//            console.debug("Download Finished ")//<<fileDownloader.temporaryLink());
+//        }
 
 //        function downloadFile(filename){
 //            fileDownloader.filename = filename
@@ -117,10 +123,12 @@ Window {
                 //                Component.onCompleted: console.debug(model.filename());
                 onClicked: {
                     if (model.isDirectory){
+//                        setLoading(true)
                         pathList.push(path);
                         lblPath.text  = pathList[pathList.length-1];
                         dropBoxFolder.foldername = path
                         dropBoxFolder.contents(listModel)
+//                        setLoading(false)
                     }else{
 
                         var _sprite = Qt.createQmlObject("import QtQuick 2.12;
@@ -136,9 +144,10 @@ MessageDialog {
                         _sprite.open();
                         _sprite.no.connect(function (){});
                         _sprite.yes.connect(function (){
+                            busyIndicator.running = true
                             fileDownloader.filename = path
                             console.debug("Downloaded: "+fileDownloader.downloadFile());
-
+                            busyIndicator.running = false;
 
                         })
                     }
@@ -158,5 +167,10 @@ MessageDialog {
         id: dropBoxSettings
         category: "DropBox"
         property string accessToken:""
+    }
+    BusyIndicator{
+        id: busyIndicator
+        running: false
+        anchors.centerIn: parent
     }
 }
